@@ -8,6 +8,26 @@ const app = express()
 const PORT = process.env.PORT || 3000
 
 app.use(express.json())
+
+app.use((req, res, next) => {
+  const password = process.env.APP_PASSWORD
+  if (!password) return next()
+
+  const auth = req.headers.authorization
+  if (!auth?.startsWith('Basic ')) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Vision Board"')
+    return res.status(401).send('Authentication required')
+  }
+
+  const [, pwd] = Buffer.from(auth.slice(6), 'base64').toString().split(':')
+  if (pwd !== password) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Vision Board"')
+    return res.status(401).send('Invalid password')
+  }
+
+  next()
+})
+
 app.use(express.static(join(__dirname, 'dist')))
 
 app.post('/api/chat', async (req, res) => {
