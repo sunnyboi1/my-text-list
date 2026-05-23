@@ -118,8 +118,11 @@ export function ScenarioCard({
 
   const handleCardClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
+    if (connectMode) {
+      onCardClick(scenario.id)
+      return
+    }
     if (hasDragged.current) return
-    if (connectMode) onCardClick(scenario.id)
   }, [connectMode, onCardClick, scenario.id])
 
   return (

@@ -33,6 +33,10 @@ html, body, #root {
   cursor: crosshair;
 }
 
+.canvas-viewport.connecting .scenario-card {
+  cursor: crosshair;
+}
+
 .canvas-world {
   position: absolute;
   top: 0;
