@@ -94,7 +94,7 @@ const loginPage = (error = false) => `<!DOCTYPE html>
 </html>`
 
 const ADMIN_USER = process.env.ADMIN_USERNAME || 'Admin'
-const ADMIN_PASS = process.env.ADMIN_PASSWORD
+const ADMIN_PASS = process.env.APP_PASSWORD || process.env.ADMIN_PASSWORD
 const AUTH_ENABLED = !!ADMIN_PASS
 const SERVER_START = new Date().toISOString()
 
