@@ -116,14 +116,16 @@ export function ScenarioCard({
     window.addEventListener('mouseup', onUp)
   }, [scenario.id, scenario.position, scale, onDragEnd])
 
+  const handleConnectCapture = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    onCardClick(scenario.id)
+  }, [onCardClick, scenario.id])
+
   const handleCardClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    if (connectMode) {
-      onCardClick(scenario.id)
-      return
-    }
     if (hasDragged.current) return
-  }, [connectMode, onCardClick, scenario.id])
+  }, [])
 
   return (
     <div
@@ -135,6 +137,7 @@ export function ScenarioCard({
         borderTopWidth: 3,
       }}
       onClick={handleCardClick}
+      onClickCapture={connectMode ? handleConnectCapture : undefined}
     >
       {/* Header */}
       <div
