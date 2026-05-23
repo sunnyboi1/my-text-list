@@ -93,13 +93,24 @@ const loginPage = (error = false) => `<!DOCTYPE html>
 </body>
 </html>`
 
+const AUTH_ENABLED = !!process.env.APP_PASSWORD
+const SERVER_START = new Date().toISOString()
+
+app.get('/healthz', (_req, res) => {
+  res.json({ ok: true, authEnabled: AUTH_ENABLED, startedAt: SERVER_START })
+})
+
 app.use((req, res, next) => {
-  const password = process.env.APP_PASSWORD
-  if (!password) return next()
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+  next()
+})
+
+app.use((req, res, next) => {
+  if (!AUTH_ENABLED) return next()
   if (req.path === '/auth') return next()
 
   const token = getCookie(req, 'auth_token')
-  if (token === password) return next()
+  if (token === process.env.APP_PASSWORD) return next()
 
   res.status(401).send(loginPage())
 })
@@ -162,4 +173,6 @@ app.get('*', (_req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
+  console.log(`Auth: ${AUTH_ENABLED ? 'ENABLED (APP_PASSWORD set)' : 'DISABLED (no APP_PASSWORD env var)'}`)
+  console.log(`Build: ${new Date().toISOString()}`)
 })
