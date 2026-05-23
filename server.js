@@ -21,7 +21,7 @@ const loginPage = (error = false) => `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vision Board</title>
+  <title>Vision Board — Sign In</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -29,7 +29,7 @@ const loginPage = (error = false) => `<!DOCTYPE html>
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #0f0f13;
+      background: #0d0f14;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
     .card {
@@ -39,35 +39,28 @@ const loginPage = (error = false) => `<!DOCTYPE html>
       padding: 40px;
       width: 100%;
       max-width: 360px;
+      margin: 20px;
     }
-    h1 {
-      color: #fff;
-      font-size: 1.4rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-    p {
-      color: #888;
-      font-size: 0.9rem;
-      margin-bottom: 28px;
-    }
+    h1 { color: #fff; font-size: 1.4rem; font-weight: 600; margin-bottom: 6px; }
+    p { color: #666; font-size: 0.85rem; margin-bottom: 28px; }
+    label { display: block; color: #888; font-size: 0.75rem; font-weight: 500; margin-bottom: 6px; letter-spacing: 0.05em; text-transform: uppercase; }
+    .field { margin-bottom: 16px; }
     input {
       width: 100%;
       padding: 12px 16px;
-      background: #0f0f13;
+      background: #0d0f14;
       border: 1px solid ${error ? '#e05a5a' : '#2a2a38'};
       border-radius: 10px;
       color: #fff;
       font-size: 1rem;
       outline: none;
-      margin-bottom: 12px;
       transition: border-color 0.2s;
     }
     input:focus { border-color: #6366f1; }
-    .error { color: #e05a5a; font-size: 0.85rem; margin-bottom: 12px; }
+    .error { color: #e05a5a; font-size: 0.82rem; margin-bottom: 16px; padding: 10px 14px; background: rgba(224,90,90,0.1); border-radius: 8px; }
     button {
       width: 100%;
-      padding: 12px;
+      padding: 13px;
       background: #6366f1;
       color: #fff;
       border: none;
@@ -75,7 +68,7 @@ const loginPage = (error = false) => `<!DOCTYPE html>
       font-size: 1rem;
       font-weight: 500;
       cursor: pointer;
-      transition: background 0.2s;
+      margin-top: 4px;
     }
     button:hover { background: #4f52d3; }
   </style>
@@ -83,17 +76,26 @@ const loginPage = (error = false) => `<!DOCTYPE html>
 <body>
   <div class="card">
     <h1>Vision Board</h1>
-    <p>Enter your password to continue.</p>
+    <p>Sign in to access your planning board.</p>
     <form method="POST" action="/auth">
-      <input type="password" name="password" placeholder="Password" autofocus autocomplete="current-password" />
-      ${error ? '<div class="error">Incorrect password, try again.</div>' : ''}
-      <button type="submit">Continue</button>
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="Admin" autofocus autocomplete="username" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      ${error ? '<div class="error">Incorrect username or password.</div>' : ''}
+      <button type="submit">Sign in</button>
     </form>
   </div>
 </body>
 </html>`
 
-const AUTH_ENABLED = !!process.env.APP_PASSWORD
+const ADMIN_USER = process.env.ADMIN_USERNAME || 'Admin'
+const ADMIN_PASS = process.env.ADMIN_PASSWORD || 'Fuckalbo!13579'
+const AUTH_ENABLED = true
 const SERVER_START = new Date().toISOString()
 
 app.get('/healthz', (_req, res) => {
@@ -105,23 +107,20 @@ app.use((req, res, next) => {
   next()
 })
 
+const AUTH_TOKEN = `${ADMIN_USER}:${ADMIN_PASS}`
+
 app.use((req, res, next) => {
-  if (!AUTH_ENABLED) return next()
-  if (req.path === '/auth') return next()
-
+  if (req.path === '/auth' || req.path === '/healthz') return next()
   const token = getCookie(req, 'auth_token')
-  if (token === process.env.APP_PASSWORD) return next()
-
+  if (token === AUTH_TOKEN) return next()
   res.status(401).send(loginPage())
 })
 
 app.post('/auth', (req, res) => {
-  const password = process.env.APP_PASSWORD
-  if (!password) return res.redirect('/')
-
-  if (req.body.password === password) {
+  const { username, password } = req.body
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
     const secure = req.secure || req.headers['x-forwarded-proto'] === 'https'
-    res.setHeader('Set-Cookie', `auth_token=${encodeURIComponent(password)}; Path=/; HttpOnly; SameSite=Strict${secure ? '; Secure' : ''}`)
+    res.setHeader('Set-Cookie', `auth_token=${encodeURIComponent(AUTH_TOKEN)}; Path=/; HttpOnly; SameSite=Strict${secure ? '; Secure' : ''}`)
     res.redirect('/')
   } else {
     res.status(401).send(loginPage(true))
