@@ -1,5 +1,6 @@
 import express from 'express'
 import Anthropic from '@anthropic-ai/sdk'
+import fs from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 
@@ -98,6 +99,18 @@ const ADMIN_PASS = process.env.APP_PASSWORD || process.env.ADMIN_PASSWORD
 const AUTH_ENABLED = !!ADMIN_PASS
 const SERVER_START = new Date().toISOString()
 
+// Board state — persists in memory, optionally to a file (set BOARD_DATA_FILE for Railway Volume)
+const BOARD_FILE = process.env.BOARD_DATA_FILE || join(__dirname, 'board-data.json')
+let boardState = { scenarios: [], updatedAt: null }
+try {
+  boardState = JSON.parse(fs.readFileSync(BOARD_FILE, 'utf-8'))
+  console.log(`Board loaded: ${boardState.scenarios?.length ?? 0} scenarios`)
+} catch { /* first run */ }
+
+function persistBoard() {
+  try { fs.writeFileSync(BOARD_FILE, JSON.stringify(boardState)) } catch { /* no-op */ }
+}
+
 app.get('/healthz', (_req, res) => {
   res.json({ ok: true, authEnabled: AUTH_ENABLED, startedAt: SERVER_START })
 })
@@ -125,6 +138,16 @@ app.post('/auth', (req, res) => {
   } else {
     res.status(401).send(loginPage(true))
   }
+})
+
+app.get('/api/board', (_req, res) => {
+  res.json(boardState)
+})
+
+app.post('/api/board', (req, res) => {
+  boardState = { scenarios: req.body.scenarios ?? [], updatedAt: new Date().toISOString() }
+  persistBoard()
+  res.json({ ok: true, updatedAt: boardState.updatedAt })
 })
 
 app.use(express.static(join(__dirname, 'dist')))

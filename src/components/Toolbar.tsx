@@ -3,9 +3,18 @@ interface Props {
   onToggleChat: () => void
   onToggleConnect: () => void
   onResetView: () => void
+  onSave: () => void
   chatOpen: boolean
   connectMode: boolean
   scenarioCount: number
+  saving: boolean
+  lastSaved: string | null
+}
+
+function formatSaved(iso: string | null) {
+  if (!iso) return null
+  const d = new Date(iso)
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
 export function Toolbar({
@@ -13,9 +22,12 @@ export function Toolbar({
   onToggleChat,
   onToggleConnect,
   onResetView,
+  onSave,
   chatOpen,
   connectMode,
   scenarioCount,
+  saving,
+  lastSaved,
 }: Props) {
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-[#161923]/90 backdrop-blur-sm border border-[#2a3348] rounded-2xl px-3 py-2 shadow-2xl">
@@ -38,7 +50,7 @@ export function Toolbar({
             : 'text-slate-400 hover:text-slate-200 hover:bg-[#2a3348]'
         }`}
       >
-        {connectMode ? '⟶ Connecting...' : '⟶ Connect'}
+        {connectMode ? '⟶ Connecting…' : '⟶ Connect'}
       </button>
 
       <button
@@ -52,11 +64,20 @@ export function Toolbar({
       <div className="w-px h-4 bg-[#2a3348]" />
 
       <button
+        onClick={onSave}
+        disabled={saving}
+        title={lastSaved ? `Last saved ${formatSaved(lastSaved)}` : 'Save board to server'}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors disabled:opacity-50 text-emerald-400 hover:text-emerald-300 hover:bg-[#2a3348]"
+      >
+        {saving ? '…' : '↑'} {saving ? 'Saving' : lastSaved ? `Saved ${formatSaved(lastSaved)}` : 'Save'}
+      </button>
+
+      <div className="w-px h-4 bg-[#2a3348]" />
+
+      <button
         onClick={onToggleChat}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
-          chatOpen
-            ? 'bg-[#2a3348] text-slate-200'
-            : 'text-slate-400 hover:text-slate-200 hover:bg-[#2a3348]'
+          chatOpen ? 'bg-[#2a3348] text-slate-200' : 'text-slate-400 hover:text-slate-200 hover:bg-[#2a3348]'
         }`}
       >
         💬 Chat
